@@ -1,0 +1,58 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 var crypto = require('crypto-js'); \
+var moment = require('moment'); \
+ \
+var secret = variables.get("aqua-secret"); \
+var endpoint = 'https://api.cloudsploit.com'; \
+var method = 'POST'; \
+var path = '/v2/tokens'; \
+let body = JSON.parse(request.body.raw); \
+var time = (moment.unix(new Date()))/1000; \
+let str = time + method + path + JSON.stringify(body); \
+ \
+var hmac = crypto.HmacSHA256(str, secret); \
+let signature = hmac.toString();\
+\
+\
+\
+API_KEY="<<key>>"\
+API_SECRET="<<secret>>"\
+TIMESTAMP=$(date -u +%s)\
+ENDPOINT="https://api.cloudsploit.com/v2/tokens"\
+METHOD="POST"\
+\
+# Define the body of the POST request\
+\
+POST_BODY='\{"validity":240,"allowed_endpoints":["ANY:*"]\}'\
+\
+# Create the string to sign\
+STRING_TO_SIGN="$TIMESTAMP$METHOD/v2/tokens$POST_BODY"\
+\
+# Create HMAC signature\
+SIGNATURE=$(echo -n "$STRING_TO_SIGN" | openssl dgst -sha256 -hmac "$API_SECRET" -hex | sed 's/.*= //g')\
+\
+# Issue the signed request to get authentication token\
+RESPONSE=$(curl -s -X $METHOD $ENDPOINT \\\
+ -H "Content-Type: application/json" \\\
+ -H "X-API-Key: $API_KEY" \\\
+ -H "X-Timestamp: $TIMESTAMP" \\\
+ -H "X-Signature: $SIGNATURE" \\\
+ -d $POST_BODY)\
+\
+# Extract status and token from the response\
+STATUS=$(echo $RESPONSE | jq -r '.status')\
+\
+# Check the status\
+if [ $STATUS -eq 200 ]; then\
+ echo "Login successful."\
+ TOKEN=$(echo $RESPONSE | jq -r '.data')\
+else\
+ echo "Request failed. Status: $RESPONSE"\
+ exit 1\
+fi}

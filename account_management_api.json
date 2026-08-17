@@ -1,0 +1,1723 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Aqua Account Management",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://{region}.edge.cloud.aquasec.com",
+            "variables": {
+                "region": {
+                    "default": "us-east-1",
+                    "description": "The region",
+                    "enum": [
+                        "us-east-1",
+                        "eu-central-1",
+                        "ap-southeast-1",
+                        "ap-southeast-2"
+                    ]
+                }
+            }
+        }
+    ],
+    "paths": {
+        "/cspm/v2/apikeys": {
+            "get": {
+                "tags": [
+                    "API Keys"
+                ],
+                "summary": "Retrieve API keys",
+                "description": "Retrieve all API keys",
+                "operationId": "listAPIKeys",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/LimitStringQueryParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/OffsetStringQueryParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API keys retrieved successfully"
+                    },
+                    "404": {
+                        "description": "Not Found - Invalid search query",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.NotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.apikeys.read"
+                ]
+            },
+            "post": {
+                "tags": [
+                    "API Keys"
+                ],
+                "summary": "Generate or duplicate an API key",
+                "description": "Generate an API key",
+                "operationId": "createAPIKey",
+                "parameters": [],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CSPM.0.CreateAPIKeyRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "API key generated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request - Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.BadRequestResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Token already exists",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ConflictResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.apikeys.write"
+                ]
+            }
+        },
+        "/cspm/v2/apikeys/{id}": {
+            "get": {
+                "tags": [
+                    "API Keys"
+                ],
+                "summary": "Retrieve details of an API key",
+                "description": "Retrieve details of an API key",
+                "operationId": "getAPIKeyDetails",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/APIKeyIdPathParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API key details retrieved successfully"
+                    },
+                    "404": {
+                        "description": "Not Found - API key not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.NotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.apikeys.read"
+                ]
+            },
+            "put": {
+                "tags": [
+                    "API Keys"
+                ],
+                "summary": "Update details of an API key",
+                "description": "Update details of an API key",
+                "operationId": "updateAPIKey",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "API key ID",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]\\d{0,19}$",
+                            "maxLength": 20
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "description": {
+                                        "type": "string",
+                                        "pattern": "^[ A-Za-z0-9._~()'!*:@,;+?#$%^&={}\\[\\]\\|\\\"\\/-]{1,255}$",
+                                        "maxLength": 255,
+                                        "description": "Optional description text for the resource (255 characters max)"
+                                    },
+                                    "ip_addresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[0-2][0-9]|3[0-2]))?$",
+                                            "maxLength": 25
+                                        },
+                                        "description": "List of allowed IP addresses or CIDR ranges"
+                                    },
+                                    "group_id": {
+                                        "type": "integer",
+                                        "minimum": -1,
+                                        "maximum": 99999999999,
+                                        "description": "Associated group identifier (-1 for none)"
+                                    },
+                                    "permission_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 99999999999
+                                        },
+                                        "description": "List of permission IDs granting access rights"
+                                    },
+                                    "roles": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "pattern": ".*",
+                                            "maxLength": 255
+                                        },
+                                        "description": "Assigned role names"
+                                    },
+                                    "enabled": {
+                                        "type": "boolean",
+                                        "description": "Activation status (true/false)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "API key details updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request - Validation errors or invalid parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.BadRequestResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Access denied or insufficient permissions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - API key not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.NotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.apikeys.write"
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "API Keys"
+                ],
+                "summary": "Delete an API key",
+                "description": "Delete an API key",
+                "operationId": "deleteAPIKey",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "API key ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]d{0,19}$",
+                            "maxLength": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API key deleted successfully"
+                    },
+                    "404": {
+                        "description": "Not Found - API key not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.NotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.apikeys.write"
+                ]
+            }
+        },
+        "/v2/signin": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Retrieve sign-in configuration information",
+                "description": "Retrieve sign-in configuration information",
+                "operationId": "getSignInInfo",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Sign-in configuration information retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": []
+            },
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Sign in user",
+                "description": "Authenticate the user and start a session",
+                "operationId": "signInUser",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "email": {
+                                        "description": "The email address of the user",
+                                        "type": "string",
+                                        "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
+                                        "minLength": 5,
+                                        "maxLength": 120
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "The password of the user",
+                                        "pattern": "^\\S+$",
+                                        "minLength": 8,
+                                        "maxLength": 8192
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sign in successful"
+                    },
+                    "403": {
+                        "description": "Forbidden - Invalid credentials, locked account, or access restrictions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error – Errors in multi-factor authentication flow or authentication",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-aqua-permissions": []
+            }
+        },
+        "/v2/signout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Sign out user",
+                "description": "End user session and sign out",
+                "operationId": "signOutUser",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
+                                        "minLength": 5,
+                                        "maxLength": 120
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sign out successful"
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": []
+            }
+        },
+        "/v2/tokens": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Generate an authentication token",
+                "description": "Generate an authentication token",
+                "operationId": "generateToken",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CSPM.0.GenerateTokenRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication token is generated successfully "
+                    },
+                    "403": {
+                        "description": "Forbidden - Access denied or insufficient permissions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-aqua-permissions": []
+            }
+        },
+        "/cspm/v2/pat": {
+            "post": {
+                "tags": [
+                    "Personal Access Tokens"
+                ],
+                "summary": "Generate a PAT",
+                "description": "Generate a PAT",
+                "operationId": "createPAT",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CSPM.0.CreatePATRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "PAT generated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "cnapp.pat.write"
+                ]
+            }
+        },
+        "/cspm/v2/pat/{id}": {
+            "get": {
+                "tags": [
+                    "Personal Access Tokens"
+                ],
+                "summary": "Retrieve details of a PAT",
+                "description": "Retrieve details of a PAT",
+                "operationId": "getPAT",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PATIdPathParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PAT details retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "cnapp.pat.read"
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Personal Access Tokens"
+                ],
+                "summary": "Update details of a PAT",
+                "description": "Update details of a PAT",
+                "operationId": "upstePAT",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PATIdPathParam"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CSPM.0.UpdatePATRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "PAT details updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "cnapp.pat.write"
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Personal Access Tokens"
+                ],
+                "summary": "Delete a PAT",
+                "description": "Delete a PAT",
+                "operationId": "deletePAT",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PATIdPathParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PAT deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "cnapp.pat.write"
+                ]
+            }
+        },
+        "/cspm/v2/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Retrieve users",
+                "description": "Retrieve users",
+                "operationId": "listUsers",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/ExpandQueryParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/LimitQueryParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/OffsetQueryParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Users retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ListUsers"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.users.read"
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Add a user",
+                "description": "Add a user",
+                "operationId": "createUser",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "pattern": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
+                                        "minLength": 5,
+                                        "maxLength": 120
+                                    },
+                                    "csp_roles": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "pattern": "^[-a-zA-Z0-9&()\\./_ ]{2,255}$",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "account_admin": {
+                                        "type": "boolean"
+                                    },
+                                    "mfa_enabled": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "account_admin"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User added successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.CreateUser"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden – Non-admin users are not permitted to create admin accounts.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - The email address is already associated with a user in this account.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ConflictResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - User limit exceeded, validation errors, or invalid email/role.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.UnprocessableEntityResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.users.write"
+                ]
+            }
+        },
+        "/cspm/v2/users/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Retrieve user details",
+                "description": "Retrieve user details",
+                "operationId": "getUserDetails",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/UserIdPathParam"
+                    },
+                    {
+                        "$ref": "#/components/parameters/ExpandQueryParam"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.DescribeUser"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden – Non-admin users are not permitted to create admin accounts.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": []
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update user details",
+                "description": "Update user details",
+                "operationId": "updateUser",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "User ID",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]\\d{0,19}$",
+                            "maxLength": 20
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "csp_roles": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "pattern": "^[-a-zA-Z0-9&()\\./_ ]{2,255}$",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "account_admin": {
+                                        "type": "boolean"
+                                    },
+                                    "mfa_enabled": {
+                                        "type": "boolean"
+                                    },
+                                    "mfa_reset": {
+                                        "type": "boolean"
+                                    },
+                                    "send_new_plugins": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User details updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.EmptyApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Access denied (insufficient permissions, user not found, or various update restrictions)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Invalid request fields or role validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.UnprocessableEntityResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.users.write"
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Remove a user",
+                "description": "Remove a user",
+                "operationId": "deleteUser",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "User ID",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]\\d{0,19}$",
+                            "maxLength": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.EmptyApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Access denied (insufficient permissions, user not found, cannot remove self, or cannot remove admin users)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.ForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CSPM.0.InternalServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ],
+                "x-aqua-permissions": [
+                    "account_mgmt.users.write"
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CSPM.0.GenerateTokenRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "validity": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1500
+                    },
+                    "allowed_endpoints": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "string",
+                            "pattern": "^(DELETE|GET|HEAD|OPTIONS|PATCH|POST|PUT|ANY){1,255}",
+                            "maxLength": 255
+                        }
+                    },
+                    "group_id": {
+                        "type": "string",
+                        "pattern": "^[0-9]+$",
+                        "minLength": 1,
+                        "maxLength": 11
+                    },
+                    "csp_roles": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[-a-zA-Z0-9&()\\./_ ]{2,255}$",
+                            "maxLength": 255
+                        }
+                    }
+                }
+            },
+            "CSPM.0.CreateAPIKeyRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "pattern": "^[ A-Za-z0-9._~()'!*:@,;+?#$%^&={}\\[\\]\\|\\\"\\/-]{1,255}$",
+                        "maxLength": 255
+                    },
+                    "iac_token": {
+                        "type": "boolean"
+                    },
+                    "system": {
+                        "type": "boolean"
+                    },
+                    "apikey_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 99999999999,
+                        "description": "Provide in case you want to duplicate a specific API key"
+                    },
+                    "expiration": {
+                        "type": "integer",
+                        "description": "Number of days the API key is valid"
+                    },
+                    "ip_addresses": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[0-2][0-9]|3[0-2]))?$",
+                            "maxLength": 25
+                        }
+                    },
+                    "permission_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 99999999999
+                        }
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": ".*",
+                            "maxLength": 255
+                        }
+                    }
+                }
+            },
+            "CSPM.0.CreatePATRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "pattern": "^[ A-Za-z0-9._~()'!*:@,;+?#$%^&={}\\[\\]\\|\\\"\\/-]{1,255}$",
+                        "maxLength": 255
+                    },
+                    "roles": {
+                        "type": "array",
+                        "description": "CSP roles to assign to the PAT",
+                        "minItems": 1,
+                        "maxItems": 100,
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[-a-zA-Z0-9&()\\./_ ]{2,255}$",
+                            "maxLength": 255
+                        }
+                    },
+                    "ip_addresses": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[0-2][0-9]|3[0-2]))?$",
+                            "maxLength": 25
+                        }
+                    },
+                    "expiration": {
+                        "type": "integer",
+                        "description": "Number of days the PAT is valid"
+                    },
+                    "apikey_id": {
+                        "description": "Provide in case you want to duplicate a specific PAT",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 99999999999
+                    }
+                }
+            },
+            "CSPM.0.UpdatePATRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "pattern": "^[ A-Za-z0-9._~()'!*:@,;+?#$%^&={}\\[\\]\\|\\\"\\/-]{1,255}$",
+                        "maxLength": 255
+                    },
+                    "ip_addresses": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[0-2][0-9]|3[0-2]))?$",
+                            "maxLength": 25
+                        }
+                    },
+                    "roles": {
+                        "type": "array",
+                        "description": "CSP roles to assign to the PAT",
+                        "minItems": 1,
+                        "maxItems": 100,
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[-a-zA-Z0-9&()\\./_ ]{2,255}$",
+                            "maxLength": 255
+                        }
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CSPM.0.GenericApiResponse": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "CSPM.0.ErrorApiResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.GenericApiResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "message": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "errors": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "CSPM.0.BadRequestResponse": {
+                "description": "Invalid Request",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.ErrorApiResponse"
+                    }
+                ]
+            },
+            "CSPM.0.InternalServerErrorResponse": {
+                "description": "Internal server error",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.ErrorApiResponse"
+                    }
+                ]
+            },
+            "CSPM.0.UnprocessableEntityResponse": {
+                "description": "Unprocessable Entity - Validation errors",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.ErrorApiResponse"
+                    }
+                ]
+            },
+            "CSPM.0.NotFoundResponse": {
+                "description": "Resource not found",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.ErrorApiResponse"
+                    }
+                ]
+            },
+            "CSPM.0.ConflictResponse": {
+                "description": "Resource conflict or already exists",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.ErrorApiResponse"
+                    }
+                ]
+            },
+            "CSPM.0.ForbiddenResponse": {
+                "description": "Access denied or insufficient permissions",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.ErrorApiResponse"
+                    }
+                ]
+            },
+            "CSPM.0.EmptyApiResponse": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.GenericApiResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                ]
+            },
+            "CSPM.0.Group": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "created": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CSPM.0.User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "confirmed": {
+                        "type": "boolean"
+                    },
+                    "password_reset": {
+                        "type": "boolean"
+                    },
+                    "send_announcements": {
+                        "type": "boolean"
+                    },
+                    "send_scan_results": {
+                        "type": "boolean"
+                    },
+                    "send_new_plugins": {
+                        "type": "boolean"
+                    },
+                    "send_new_risks": {
+                        "type": "boolean"
+                    },
+                    "account_admin": {
+                        "type": "boolean"
+                    },
+                    "created": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "multiaccount": {
+                        "type": "boolean"
+                    },
+                    "count_failed_signin": {
+                        "type": "integer"
+                    },
+                    "last_signin_attempt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "CSPM.0.Login": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "created": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CSPM.0.Group"
+                        }
+                    },
+                    "ip_address": {
+                        "type": "string",
+                        "format": "ipv4"
+                    },
+                    "cspm_groups": {
+                        "type": "object"
+                    },
+                    "csp_roles": {
+                        "type": "object"
+                    }
+                }
+            },
+            "CSPM.0.Account": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "stripe_id": {
+                        "type": "integer"
+                    },
+                    "trial_end": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "current_plan": {
+                        "type": "integer"
+                    },
+                    "additional_credits": {
+                        "type": "integer"
+                    },
+                    "num_allowed_keys": {
+                        "type": "integer"
+                    },
+                    "custom_cost": {
+                        "type": "integer"
+                    },
+                    "suppressions_admin_only": {
+                        "type": "boolean"
+                    },
+                    "global_suppressions_admin_only": {
+                        "type": "boolean"
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "aquasec",
+                            "cloudsploit",
+                            "salesforce"
+                        ],
+                        "default": "cloudsploit"
+                    },
+                    "enforce_oauth": {
+                        "type": "boolean"
+                    },
+                    "login_timeout": {
+                        "type": "integer"
+                    },
+                    "just_in_time_domains": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "just_in_time_domain": {
+                        "type": "string"
+                    },
+                    "just_in_time_domain_secondary": {
+                        "type": "string"
+                    },
+                    "users_admin_only": {
+                        "type": "boolean"
+                    },
+                    "integrations_admin_only": {
+                        "type": "boolean"
+                    },
+                    "disable_default_emails": {
+                        "type": "boolean"
+                    },
+                    "block_default_group": {
+                        "type": "boolean"
+                    },
+                    "presuppress_plugins": {
+                        "type": "boolean"
+                    },
+                    "associate_tags": {
+                        "type": "boolean"
+                    },
+                    "aws_marketplace_id": {
+                        "type": "string"
+                    },
+                    "byok_bucket": {
+                        "type": "string"
+                    },
+                    "csp_enabled": {
+                        "type": "boolean"
+                    },
+                    "log_rocket_enabled": {
+                        "type": "boolean"
+                    },
+                    "scan_scoring": {
+                        "type": "string"
+                    },
+                    "renewal_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "mttr_enabled": {
+                        "type": "boolean"
+                    },
+                    "visual_enabled": {
+                        "type": "boolean"
+                    },
+                    "tail_enabled": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CSPM.0.ListUsers": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.GenericApiResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "array",
+                                "items": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CSPM.0.User"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "groups": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/CSPM.0.Group"
+                                                    }
+                                                },
+                                                "logins": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/CSPM.0.Login"
+                                                    }
+                                                },
+                                                "csp_roles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "CSPM.0.DescribeUser": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.GenericApiResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/CSPM.0.User"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "groups": {
+                                                "type": "array",
+                                                "items": {
+                                                    "$ref": "#/components/schemas/CSPM.0.Group"
+                                                }
+                                            },
+                                            "accounts": {
+                                                "type": "array",
+                                                "items": {
+                                                    "$ref": "#/components/schemas/CSPM.0.Account"
+                                                }
+                                            },
+                                            "csp_roles": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            },
+            "CSPM.0.CreateUser": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CSPM.0.GenericApiResponse"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/CSPM.0.User"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "csp_roles": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "parameters": {
+            "UserIdPathParam": {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "User ID",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[0-9]\\d{0,19}$",
+                    "maxLength": 20
+                }
+            },
+            "APIKeyIdPathParam": {
+                "name": "id",
+                "description": "API key ID",
+                "in": "path",
+                "required": true,
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[0-9]\\d{0,19}$",
+                    "maxLength": 20
+                }
+            },
+            "PATIdPathParam": {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "PAT ID",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[0-9]\\d{0,19}$",
+                    "maxLength": 20
+                }
+            },
+            "LimitStringQueryParam": {
+                "name": "limit",
+                "in": "query",
+                "required": false,
+                "description": "The maximum number of results per page",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,2}$"
+                }
+            },
+            "OffsetStringQueryParam": {
+                "name": "offset",
+                "in": "query",
+                "required": false,
+                "description": "The number of records to skip before retrieving",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,5}$"
+                }
+            },
+            "ExpandQueryParam": {
+                "name": "expand",
+                "in": "query",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[a-z,]{0,100}$",
+                    "maxLength": 100
+                },
+                "description": "Comma separated list of values to expand (possible options include: group, account, roles)"
+            },
+            "LimitQueryParam": {
+                "name": "limit",
+                "description": "Number of users to return per request",
+                "in": "query",
+                "schema": {
+                    "type": "integer",
+                    "default": 2000
+                }
+            },
+            "OffsetQueryParam": {
+                "name": "offset",
+                "description": "The number of records to skip before retrieving",
+                "in": "query",
+                "schema": {
+                    "type": "integer",
+                    "default": 0
+                }
+            }
+        },
+        "securitySchemes": {
+            "jwt": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}
