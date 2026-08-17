@@ -4,12 +4,12 @@
 
 **Blocked by:** 01 — Project Foundation, EU Auth Client & Token Lifecycle with Tracer Tool
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] In-memory staged action store supporting 5-minute TTL expiration and automatic cleanup of expired tokens.
-- [ ] Structured impact diff formatter that outputs a clear, human-readable `⚠️ ACTION PENDING CONFIRMATION` preview containing action type, target ID, and field changes.
-- [ ] `execute_confirmed_action(confirmation_token)` tool that validates token, executes the staged HTTP request via the auth client, invalidates the token, and returns the response.
-- [ ] `cancel_staged_action(confirmation_token)` tool that deletes a staged action from the store.
-- [ ] `list_staged_actions()` tool that displays all active pending confirmations.
-- [ ] `AQUA_READ_ONLY=true` environment flag support that immediately rejects all write/stage attempts.
-- [ ] High-seam integration tests verifying staging, preview generation, confirmed execution, token expiry, cancellation, and read-only rejection.
+- [x] In-memory staged action store supporting 5-minute TTL expiration and automatic cleanup of expired tokens.
+- [x] Structured impact diff formatter that outputs a clear, human-readable `⚠️ ACTION PENDING CONFIRMATION` preview containing action type, target ID, and field changes.
+- [x] `execute_confirmed_action(confirmation_token)` tool that validates token, executes the staged HTTP request via the auth client, invalidates the token, and returns the response.
+- [x] `cancel_staged_action(confirmation_token)` tool that deletes a staged action from the store.
+- [x] `list_staged_actions()` tool that displays all active pending confirmations.
+- [x] `AQUA_READ_ONLY=true` environment flag support that immediately rejects all write/stage attempts.
+- [x] High-seam integration tests verifying staging, preview generation, confirmed execution, token expiry, cancellation, and read-only rejection.

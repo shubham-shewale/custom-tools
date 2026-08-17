@@ -9,15 +9,18 @@ from mcp.server import MCPServer
 
 from aquasec_mcp.client import AquaClient
 from aquasec_mcp.config import AquaConfig
+from aquasec_mcp.guardrail import GuardrailEngine
 
 
 def create_mcp_server(
     config: AquaConfig | None = None,
     client: AquaClient | None = None,
+    guardrail_engine: GuardrailEngine | None = None,
 ) -> MCPServer:
     """Create and configure the Aqua Security MCP server with registered tools."""
     cfg = config or AquaConfig.from_env()
     aqua_client = client or AquaClient(config=cfg)
+    guardrail = guardrail_engine or GuardrailEngine(config=cfg, client=aqua_client)
 
     server = MCPServer(
         name="Aqua Security EU",
@@ -92,5 +95,29 @@ def create_mcp_server(
                 f"3. Ensure the Aqua EU Cloud endpoints are reachable over your network.\n\n"
                 f"```json\n{json.dumps(error_payload, indent=2)}\n```"
             )
+
+    @server.tool(
+        name="execute_confirmed_action",
+        description="Execute a previously staged action against Aqua Security EU API using its 5-minute confirmation token.",
+    )
+    async def execute_confirmed_action(confirmation_token: str) -> str:
+        """Validate token, execute the staged HTTP request via AquaClient, purge token, and return live response."""
+        return await guardrail.execute_confirmed_action(confirmation_token)
+
+    @server.tool(
+        name="cancel_staged_action",
+        description="Cancel and purge a pending staged action from memory using its confirmation token.",
+    )
+    async def cancel_staged_action(confirmation_token: str) -> str:
+        """Cancel a pending staged action and purge its confirmation token from memory."""
+        return guardrail.cancel_staged_action(confirmation_token)
+
+    @server.tool(
+        name="list_staged_actions",
+        description="List all currently active pending actions awaiting operator confirmation.",
+    )
+    async def list_staged_actions() -> str:
+        """List all currently active state-modifying actions pending operator confirmation."""
+        return guardrail.list_staged_actions()
 
     return server
