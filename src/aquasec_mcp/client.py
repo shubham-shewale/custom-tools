@@ -151,7 +151,6 @@ class AquaClient:
         """Verify credentials and connectivity by acquiring/validating a token."""
         client = self._ensure_client()
         token = await self.auth_manager.get_valid_token(client)
-        cached_token = self.auth_manager._cached_token
 
         return {
             "status": "connected",
@@ -160,5 +159,5 @@ class AquaClient:
             "token_url": self.config.token_url,
             "authenticated": bool(token),
             "token_validity_minutes": self.auth_manager.token_validity_minutes,
-            "token_expires_at": cached_token.expires_at if cached_token else None,
+            "token_expires_at": self.auth_manager.token_expires_at,
         }

@@ -57,6 +57,16 @@ class AquaAuthManager:
         self.token_validity_minutes = token_validity_minutes
         self._cached_token: AquaToken | None = None
 
+    @property
+    def token_expires_at(self) -> float | None:
+        """Return the unix expiration timestamp of the cached JWT token, if present."""
+        return self._cached_token.expires_at if self._cached_token else None
+
+    @property
+    def cached_token(self) -> str | None:
+        """Return the current cached JWT token string if present and not invalidated."""
+        return self._cached_token.token if self._cached_token else None
+
     def generate_signature(self, timestamp: int, method: str, path: str, body: str) -> str:
         """Compute HMAC-SHA256 hex signature over Timestamp + Method + Path + JSONBody."""
         if not self.config.api_secret:
