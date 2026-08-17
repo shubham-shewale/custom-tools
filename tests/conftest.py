@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -17,6 +18,22 @@ def extract_tool_text(result: Any) -> str:
     first_block = result.content[0]
     assert isinstance(first_block, TextContent)
     return str(first_block.text)
+
+
+def extract_token_from_diff(text: str) -> str:
+    """Extract the UUID confirmation token from impact diff output."""
+    for line in text.splitlines():
+        if "- **Confirmation Token**:" in line:
+            return line.split("`")[1].strip()
+    start = text.find("```json\n")
+    if start != -1:
+        end = text.find("\n```", start + 8)
+        if end != -1:
+            json_str = text[start + 8 : end]
+            data = json.loads(json_str)
+            if isinstance(data, dict) and "confirmation_token" in data:
+                return str(data["confirmation_token"])
+    raise ValueError(f"Could not extract confirmation token from:\n{text}")
 
 
 @pytest.fixture

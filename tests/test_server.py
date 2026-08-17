@@ -42,6 +42,11 @@ async def test_check_aqua_connection_tool_success() -> None:
     assert "update_suppression" in tool_names
     assert "delete_suppression" in tool_names
     assert "import_suppressions" in tool_names
+    assert "list_users" in tool_names
+    assert "get_user" in tool_names
+    assert "create_user" in tool_names
+    assert "update_user" in tool_names
+    assert "delete_user" in tool_names
 
     result = await server.call_tool("check_aqua_connection", {})
     text = extract_tool_text(result)

@@ -11,23 +11,8 @@ from aquasec_mcp.client import AquaClient
 from aquasec_mcp.config import AquaConfig
 from aquasec_mcp.guardrail import GuardrailEngine
 from aquasec_mcp.server import create_mcp_server
+from tests.conftest import extract_token_from_diff as _extract_token_from_diff
 from tests.conftest import extract_tool_text
-
-
-def _extract_token_from_diff(text: str) -> str:
-    """Helper to extract the UUID confirmation token from impact diff output."""
-    for line in text.splitlines():
-        if "- **Confirmation Token**:" in line:
-            return line.split("`")[1].strip()
-    start = text.find("```json\n")
-    if start != -1:
-        end = text.find("\n```", start + 8)
-        if end != -1:
-            json_str = text[start + 8 : end]
-            data = json.loads(json_str)
-            if isinstance(data, dict) and "confirmation_token" in data:
-                return str(data["confirmation_token"])
-    raise ValueError(f"Could not extract confirmation token from:\n{text}")
 
 
 @pytest.fixture
