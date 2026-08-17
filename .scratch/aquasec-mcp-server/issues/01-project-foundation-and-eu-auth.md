@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Python package configured with dependencies (`mcp`, `httpx`, `pydantic`) and CLI executable entrypoint.
-- [ ] Configuration loader supporting `AQUA_API_KEY`, `AQUA_API_SECRET`, defaulting to EU region endpoints (`https://eu-central-1.edge.cloud.aquasec.com` and `https://eu-1.api.cloudsploit.com/v2/tokens`).
-- [ ] HMAC-SHA256 request signer requesting token with `validity: 720` (12 hours).
-- [ ] In-memory token cache with proactive refresh when within 5 minutes of expiration.
-- [ ] Reactive 401 retry handler that purges expired token and acquires a new one.
-- [ ] FastMCP server running over stdio exposing a `check_aqua_connection` health check tool.
-- [ ] High-seam integration tests verifying tool invocation and token exchange against mocked HTTP transport.
+- [x] Python package configured with dependencies (`mcp`, `httpx`, `pydantic`) and CLI executable entrypoint.
+- [x] Configuration loader supporting `AQUA_API_KEY`, `AQUA_API_SECRET`, defaulting to EU region endpoints (`https://eu-central-1.edge.cloud.aquasec.com` and `https://eu-1.api.cloudsploit.com/v2/tokens`).
+- [x] HMAC-SHA256 request signer requesting token with `validity: 720` (12 hours).
+- [x] In-memory token cache with proactive refresh when within 5 minutes of expiration.
+- [x] Reactive 401 retry handler that purges expired token and acquires a new one.
+- [x] FastMCP server running over stdio exposing a `check_aqua_connection` health check tool.
+- [x] High-seam integration tests verifying tool invocation and token exchange against mocked HTTP transport.
