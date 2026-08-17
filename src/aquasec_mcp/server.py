@@ -10,6 +10,7 @@ from mcp.server import MCPServer
 from aquasec_mcp.client import AquaClient
 from aquasec_mcp.config import AquaConfig
 from aquasec_mcp.guardrail import GuardrailEngine
+from aquasec_mcp.tools.roles_scopes import register_role_and_scope_tools
 from aquasec_mcp.tools.suppressions import register_suppression_tools
 from aquasec_mcp.tools.users import register_user_tools
 
@@ -128,6 +129,7 @@ def create_mcp_server(
     # Register domain tools
     register_suppression_tools(server=server, client=aqua_client, guardrail=guardrail)
     register_user_tools(server=server, client=aqua_client, guardrail=guardrail)
+    register_role_and_scope_tools(server=server, client=aqua_client)
 
     return server
 
