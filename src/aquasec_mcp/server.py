@@ -10,6 +10,7 @@ from mcp.server import MCPServer
 from aquasec_mcp.client import AquaClient
 from aquasec_mcp.config import AquaConfig
 from aquasec_mcp.guardrail import GuardrailEngine
+from aquasec_mcp.tools.suppressions import register_suppression_tools
 
 
 def create_mcp_server(
@@ -102,7 +103,8 @@ def create_mcp_server(
     )
     async def execute_confirmed_action(confirmation_token: str) -> str:
         """Validate token, execute the staged HTTP request via AquaClient, purge token, and return live response."""
-        return await guardrail.execute_confirmed_action(confirmation_token)
+        res: str = await guardrail.execute_confirmed_action(confirmation_token)
+        return res
 
     @server.tool(
         name="cancel_staged_action",
@@ -110,7 +112,8 @@ def create_mcp_server(
     )
     async def cancel_staged_action(confirmation_token: str) -> str:
         """Cancel a pending staged action and purge its confirmation token from memory."""
-        return guardrail.cancel_staged_action(confirmation_token)
+        res: str = guardrail.cancel_staged_action(confirmation_token)
+        return res
 
     @server.tool(
         name="list_staged_actions",
@@ -118,6 +121,10 @@ def create_mcp_server(
     )
     async def list_staged_actions() -> str:
         """List all currently active state-modifying actions pending operator confirmation."""
-        return guardrail.list_staged_actions()
+        res: str = guardrail.list_staged_actions()
+        return res
+
+    # Register domain tools
+    register_suppression_tools(server=server, client=aqua_client, guardrail=guardrail)
 
     return server

@@ -1,25 +1,16 @@
 import time
-from typing import Any
 
 import httpx
 import pytest
 import respx
-from mcp.types import CallToolResult, TextContent
+from mcp.types import CallToolResult
 
 from aquasec_mcp.auth import AquaToken
 from aquasec_mcp.client import AquaClient
 from aquasec_mcp.config import AquaConfig
 from aquasec_mcp.guardrail import GuardrailEngine
 from aquasec_mcp.server import create_mcp_server
-
-
-def _extract_text(result: Any) -> str:
-    """Helper to safely extract string text from a CallToolResult."""
-    assert isinstance(result, CallToolResult)
-    assert len(result.content) > 0
-    first_block = result.content[0]
-    assert isinstance(first_block, TextContent)
-    return str(first_block.text)
+from tests.conftest import extract_tool_text
 
 
 @pytest.mark.asyncio
@@ -45,9 +36,15 @@ async def test_check_aqua_connection_tool_success() -> None:
     assert "execute_confirmed_action" in tool_names
     assert "cancel_staged_action" in tool_names
     assert "list_staged_actions" in tool_names
+    assert "list_suppressions" in tool_names
+    assert "get_suppression" in tool_names
+    assert "create_suppression" in tool_names
+    assert "update_suppression" in tool_names
+    assert "delete_suppression" in tool_names
+    assert "import_suppressions" in tool_names
 
     result = await server.call_tool("check_aqua_connection", {})
-    text = _extract_text(result)
+    text = extract_tool_text(result)
     assert "🟢 Aqua Security EU Connection: Successful" in text
     assert "EU (eu-central-1)" in text
     assert "https://eu-central-1.edge.cloud.aquasec.com" in text
@@ -66,7 +63,7 @@ async def test_check_aqua_connection_missing_credentials() -> None:
     server = create_mcp_server(config=config, client=client)
 
     result = await server.call_tool("check_aqua_connection", {})
-    text = _extract_text(result)
+    text = extract_tool_text(result)
     assert "🔴 Aqua Security EU Connection: Failed" in text
     assert "AQUA_API_KEY and AQUA_API_SECRET must be set" in text
     assert "Troubleshooting" in text
@@ -89,7 +86,7 @@ async def test_check_aqua_connection_auth_failure() -> None:
     server = create_mcp_server(config=config, client=client)
 
     result = await server.call_tool("check_aqua_connection", {})
-    text = _extract_text(result)
+    text = extract_tool_text(result)
     assert "🔴 Aqua Security EU Connection: Failed" in text
     assert "403" in text
 
@@ -176,7 +173,7 @@ async def test_guardrail_mcp_tool_flow_list_execute_cancel() -> None:
 
     # 1. list_staged_actions when empty
     list_res1 = await server.call_tool("list_staged_actions", {})
-    assert "No staged actions pending confirmation" in _extract_text(list_res1)
+    assert "No staged actions pending confirmation" in extract_tool_text(list_res1)
 
     # 2. Stage 2 actions in the engine
     engine.stage_mutation(
@@ -204,27 +201,27 @@ async def test_guardrail_mcp_tool_flow_list_execute_cancel() -> None:
 
     # 3. list_staged_actions shows both
     list_res2 = await server.call_tool("list_staged_actions", {})
-    list_text2 = _extract_text(list_res2)
+    list_text2 = extract_tool_text(list_res2)
     assert token_create in list_text2
     assert token_delete in list_text2
     assert "user:engineer@example.com" in list_text2
 
     # 4. Cancel the delete action
     cancel_res = await server.call_tool("cancel_staged_action", {"confirmation_token": token_delete})
-    cancel_text = _extract_text(cancel_res)
+    cancel_text = extract_tool_text(cancel_res)
     assert "🗑️ Staged Action Cancelled" in cancel_text
     assert token_delete in cancel_text
 
     # 5. Execute confirmed create action
     exec_res = await server.call_tool("execute_confirmed_action", {"confirmation_token": token_create})
-    exec_text = _extract_text(exec_res)
+    exec_text = extract_tool_text(exec_res)
     assert "✅ Action Executed Successfully" in exec_text
     assert "user_id" in exec_text
     assert mutation_route.call_count == 1
 
     # 6. Replay execution should fail
     replay_res = await server.call_tool("execute_confirmed_action", {"confirmation_token": token_create})
-    replay_text = _extract_text(replay_res)
+    replay_text = extract_tool_text(replay_res)
     assert "❌ Invalid or Expired Confirmation Token" in replay_text
 
 
@@ -240,4 +237,4 @@ async def test_guardrail_mcp_tool_read_only_killswitch() -> None:
     server = create_mcp_server(config=config, client=client, guardrail_engine=engine)
 
     exec_res = await server.call_tool("execute_confirmed_action", {"confirmation_token": "any-token"})
-    assert "⛔ READ-ONLY MODE" in _extract_text(exec_res)
+    assert "⛔ READ-ONLY MODE" in extract_tool_text(exec_res)

@@ -59,7 +59,7 @@ class AquaClient:
             return path_or_url
         base = self.config.base_url.rstrip("/") + "/"
         path = path_or_url.lstrip("/")
-        return urljoin(base, path)
+        return str(urljoin(base, path))
 
     async def request(
         self,
