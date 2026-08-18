@@ -44,14 +44,20 @@ class AquaConfig(BaseModel):
         read_only_raw = os.getenv("AQUA_READ_ONLY", "false").strip().lower()
         read_only = read_only_raw in ("true", "1", "yes", "on")
 
+        base_url_raw = (os.getenv("AQUA_BASE_URL") or "").strip()
+        base_url = base_url_raw.rstrip("/") if base_url_raw else "https://eu-central-1.edge.cloud.aquasec.com"
+
+        token_url_raw = (os.getenv("AQUA_TOKEN_URL") or "").strip()
+        token_url = token_url_raw if token_url_raw else "https://eu-1.api.cloudsploit.com/v2/tokens"
+
         timeout_raw = os.getenv("AQUA_REQUEST_TIMEOUT")
         request_timeout = float(timeout_raw) if timeout_raw else 30.0
 
         return cls(
-            api_key=os.getenv("AQUA_API_KEY"),
-            api_secret=os.getenv("AQUA_API_SECRET"),
-            base_url=os.getenv("AQUA_BASE_URL", "https://eu-central-1.edge.cloud.aquasec.com"),
-            token_url=os.getenv("AQUA_TOKEN_URL", "https://eu-1.api.cloudsploit.com/v2/tokens"),
+            api_key=(os.getenv("AQUA_API_KEY") or "").strip() or None,
+            api_secret=(os.getenv("AQUA_API_SECRET") or "").strip() or None,
+            base_url=base_url,
+            token_url=token_url,
             read_only=read_only,
             request_timeout=request_timeout,
         )

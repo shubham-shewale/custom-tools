@@ -44,14 +44,20 @@ def test_config_from_dotenv(tmp_path: pytest.TempPathFactory, monkeypatch: pytes
     env_file.write_text(
         "AQUA_API_KEY=dotenv-key\n"
         "AQUA_API_SECRET=dotenv-secret\n"
+        "AQUA_BASE_URL=https://custom-eu.aquasec.com/\n"
+        "AQUA_TOKEN_URL=https://custom-tokens.cloudsploit.com/v2/tokens\n"
         "AQUA_READ_ONLY=1\n"
     )
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("AQUA_API_KEY", raising=False)
     monkeypatch.delenv("AQUA_API_SECRET", raising=False)
+    monkeypatch.delenv("AQUA_BASE_URL", raising=False)
+    monkeypatch.delenv("AQUA_TOKEN_URL", raising=False)
     monkeypatch.delenv("AQUA_READ_ONLY", raising=False)
 
     config = AquaConfig.from_env()
     assert config.api_key == "dotenv-key"
     assert config.api_secret == "dotenv-secret"
+    assert config.base_url == "https://custom-eu.aquasec.com"  # stripped trailing slash
+    assert config.token_url == "https://custom-tokens.cloudsploit.com/v2/tokens"
     assert config.read_only is True

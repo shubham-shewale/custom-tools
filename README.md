@@ -63,8 +63,15 @@ cp .env.example .env
 
 Edit `.env`:
 ```dotenv
+# Credentials
 AQUA_API_KEY="your-api-key"
 AQUA_API_SECRET="your-api-secret"
+
+# Endpoints (Defaults to Aqua EU Cloud; adjust if targeting US or custom domain)
+AQUA_BASE_URL="https://eu-central-1.edge.cloud.aquasec.com"
+AQUA_TOKEN_URL="https://eu-1.api.cloudsploit.com/v2/tokens"
+
+# Guardrail mode (true blocks all write operations)
 AQUA_READ_ONLY="false"
 ```
 
