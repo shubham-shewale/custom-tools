@@ -293,6 +293,8 @@ def register_suppression_tools(
         description=(
             "Stage updates to an existing Aqua Security supply chain suppression rule "
             "(e.g. modify name, description, comment, enable/disable status, scope, branch, or controls). "
+            "Fetches the existing suppression to construct a complete schema-compliant PUT payload, "
+            "merging only requested modifications. "
             "Returns an impact diff preview and a 5-minute confirmation token. "
             "Requires explicit confirmation via `execute_confirmed_action` to apply."
         ),
@@ -308,12 +310,96 @@ def register_suppression_tools(
         scope: dict[str, Any] | None = None,
         repository: str | None = None,
         branch: str | None = None,
+        check: str | None = None,
         status: str | None = None,
     ) -> str:
         """Stage modification of an existing suppression rule with impact preview."""
+        if guardrail.config.read_only:
+            return (
+                "# ⛔ READ-ONLY MODE: Action Staging Blocked\n\n"
+                "Cannot stage action: AQUA_READ_ONLY is enabled. "
+                "All state-modifying operations are unconditionally blocked."
+            )
+
         clean_id = suppression_id.strip()
 
-        # Handle status shorthand
+        # 1. Fetch existing suppression rule by ID
+        try:
+            get_resp = await client.get(f"/supply_chain/v2/build/suppressions/{clean_id}")
+        except Exception as exc:  # noqa: BLE001
+            return (
+                f"# 🔴 Failed to Fetch Existing Suppression Rule (Client / Network Error)\n\n"
+                f"- **Suppression ID**: `{clean_id}`\n"
+                f"- **Error**: {exc}\n"
+            )
+
+        if not get_resp.is_success:
+            try:
+                err_data = get_resp.json()
+                err_str = json.dumps(err_data, indent=2)
+            except Exception:  # noqa: BLE001
+                err_str = get_resp.text
+            return (
+                f"# 🔴 Suppression Rule Not Found or Error (HTTP {get_resp.status_code})\n\n"
+                f"- **Suppression ID**: `{clean_id}`\n\n"
+                f"```json\n{err_str}\n```"
+            )
+
+        # 2. Extract existing suppression data
+        raw_data = get_resp.json()
+        if isinstance(raw_data, dict) and "data" in raw_data and isinstance(raw_data["data"], dict):
+            existing_rule = raw_data["data"]
+        elif isinstance(raw_data, dict):
+            existing_rule = raw_data
+        else:
+            existing_rule = {}
+
+        # 3. Build PUT payload using only fields accepted by UpdateBuildSecuritySuppression schema
+        # Required fields: name, description, enable, controls, scope
+        payload: dict[str, Any] = {
+            "name": existing_rule.get("name", ""),
+            "description": existing_rule.get("description", ""),
+            "enable": existing_rule.get("enable", True),
+            "controls": existing_rule.get("controls", []),
+            "scope": existing_rule.get("scope") or _build_scope(),
+        }
+
+        # Allowed optional fields in UpdateBuildSecuritySuppression
+        for opt_key in (
+            "enforce",
+            "fail_build",
+            "fail_pr",
+            "enforcement_schedule",
+            "clear_schedule",
+            "type",
+            "policy_id",
+        ):
+            if opt_key in existing_rule and existing_rule[opt_key] is not None:
+                payload[opt_key] = existing_rule[opt_key]
+
+        # 4. Merge caller-requested changes into PUT payload
+        field_changes: dict[str, Any] = {"suppression_id": clean_id}
+
+        if name is not None:
+            payload["name"] = name
+            field_changes["name"] = name
+
+        final_desc: str | None = None
+        if description is not None:
+            final_desc = description
+        elif comment is not None:
+            final_desc = comment
+        elif reason is not None:
+            final_desc = reason
+
+        if final_desc is not None:
+            payload["description"] = final_desc
+            field_changes["description"] = final_desc
+        if comment is not None:
+            field_changes["comment"] = comment
+        if reason is not None:
+            field_changes["reason"] = reason
+
         resolved_enable = enable
         if status is not None:
             if status.lower() == "enabled":
@@ -321,37 +407,29 @@ def register_suppression_tools(
             elif status.lower() == "disabled":
                 resolved_enable = False
 
-        final_desc = description
-        if final_desc is None:
-            if comment is not None:
-                final_desc = comment
-            elif reason is not None:
-                final_desc = reason
-
-        payload: dict[str, Any] = {}
-        field_changes: dict[str, Any] = {"suppression_id": clean_id}
-
-        if name is not None:
-            payload["name"] = name
-            field_changes["name"] = name
-        if final_desc is not None:
-            payload["description"] = final_desc
-            field_changes["description"] = final_desc
         if resolved_enable is not None:
             payload["enable"] = resolved_enable
             field_changes["enable"] = resolved_enable
-        if controls is not None:
-            payload["controls"] = controls
-            field_changes["controls_count"] = len(controls)
+        if status is not None:
+            field_changes["status"] = status
+
+        if controls is not None or check is not None:
+            resolved_controls = _build_controls(check=check, controls=controls)
+            payload["controls"] = resolved_controls
+            field_changes["controls_count"] = len(resolved_controls)
+        if check is not None:
+            field_changes["check"] = check
+
         if scope is not None or repository is not None or branch is not None:
             resolved_scope = _build_scope(repository=repository, branch=branch, scope=scope)
             payload["scope"] = resolved_scope
             field_changes["scope"] = resolved_scope
-        if comment is not None:
-            field_changes["comment"] = comment
-        if reason is not None:
-            field_changes["reason"] = reason
+        if repository is not None:
+            field_changes["repository"] = repository
+        if branch is not None:
+            field_changes["branch"] = branch
 
+        # 5. Stage the mutation
         try:
             res_update: str = guardrail.stage_mutation(
                 action_type="update_suppression",

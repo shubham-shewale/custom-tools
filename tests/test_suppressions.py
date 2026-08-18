@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import httpx
 import pytest
 import respx
 
@@ -284,6 +285,34 @@ async def test_update_suppression_staged_flow_and_execution(
     base_config: AquaConfig, mock_auth: respx.Route
 ) -> None:
     rule_id = "target-update-uuid-456"
+    existing_rule = {
+        "policy_id": rule_id,
+        "name": "Original Suppression Rule Name",
+        "description": "Original suppression description",
+        "enable": True,
+        "policy_type": "suppression",
+        "created": "2026-01-15T10:00:00Z",
+        "updated": "2026-02-01T12:00:00Z",
+        "created_by": "alice@example.com",
+        "updated_by": "bob@example.com",
+        "controls": [
+            {
+                "type": "misconfigurations",
+                "scan_type": "manifest",
+                "checks": [{"id": "AVD-AWS-0001"}],
+            }
+        ],
+        "scope": {
+            "expression": "v1",
+            "variables": [{"attribute": "repository.name", "value": "old-repo"}],
+        },
+    }
+
+    respx.get(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
+        status_code=200,
+        json=existing_rule,
+    )
+
     update_route = respx.put(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
         status_code=200,
         json={"policy_id": rule_id, "status": "updated"},
@@ -293,7 +322,7 @@ async def test_update_suppression_staged_flow_and_execution(
     engine = GuardrailEngine(config=base_config, client=client)
     server = create_mcp_server(config=base_config, client=client, guardrail_engine=engine)
 
-    # 1. Stage update with comment
+    # 1. Stage update with comment, status, repository
     update_res = await server.call_tool(
         "update_suppression",
         {
@@ -310,6 +339,20 @@ async def test_update_suppression_staged_flow_and_execution(
 
     token = _extract_token_from_diff(diff_text)
 
+    # Verify staged action in store contains complete PUT payload with preserved and updated fields
+    staged_action = engine.store.get_action(token)
+    assert staged_action is not None
+    assert isinstance(staged_action.payload, dict)
+    staged_payload = staged_action.payload
+    assert staged_payload["name"] == "Original Suppression Rule Name"  # preserved
+    assert staged_payload["description"] == "Updated rationale for suppression"  # updated
+    assert staged_payload["enable"] is False  # updated
+    assert staged_payload["controls"] == existing_rule["controls"]  # preserved
+    assert staged_payload["scope"]["variables"][0]["value"] == "frontend-app"  # updated
+    # Verify read-only server fields are not in the payload
+    for server_field in ("created", "updated", "created_by", "updated_by", "policy_type"):
+        assert server_field not in staged_payload
+
     # 2. Execute confirmation
     exec_res = await server.call_tool("execute_confirmed_action", {"confirmation_token": token})
     exec_text = extract_tool_text(exec_res)
@@ -317,9 +360,195 @@ async def test_update_suppression_staged_flow_and_execution(
     assert update_route.call_count == 1
 
     req_body = json.loads(update_route.calls[0].request.content)
+    assert req_body["name"] == "Original Suppression Rule Name"
     assert req_body["description"] == "Updated rationale for suppression"
     assert req_body["enable"] is False
+    assert req_body["controls"] == existing_rule["controls"]
     assert req_body["scope"]["variables"][0]["value"] == "frontend-app"
+    for server_field in ("created", "updated", "created_by", "updated_by", "policy_type"):
+        assert server_field not in req_body
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_update_suppression_single_field_enable_preserves_all_other_fields(
+    base_config: AquaConfig, mock_auth: respx.Route
+) -> None:
+    rule_id = "single-field-update-uuid-111"
+    existing_rule = {
+        "policy_id": rule_id,
+        "name": "Production CVE Suppression",
+        "description": "Risk accepted by secops team",
+        "enable": True,
+        "policy_type": "suppression",
+        "created": "2026-01-10T08:00:00Z",
+        "updated": "2026-01-10T08:00:00Z",
+        "created_by": "secops@example.com",
+        "updated_by": "secops@example.com",
+        "controls": [
+            {
+                "type": "cveByIds",
+                "scan_type": "vulnerability",
+                "cve_ids": ["CVE-2024-12345"],
+            }
+        ],
+        "scope": {
+            "expression": "v1 && v2",
+            "variables": [
+                {"attribute": "repository.name", "value": "backend-service"},
+                {"attribute": "repository.branch", "value": "main"},
+            ],
+        },
+    }
+
+    respx.get(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
+        status_code=200,
+        json=existing_rule,
+    )
+
+    update_route = respx.put(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
+        status_code=200,
+        json={"policy_id": rule_id, "status": "updated"},
+    )
+
+    client = AquaClient(config=base_config)
+    engine = GuardrailEngine(config=base_config, client=client)
+    server = create_mcp_server(config=base_config, client=client, guardrail_engine=engine)
+
+    # Update ONLY enable field
+    update_res = await server.call_tool(
+        "update_suppression",
+        {
+            "suppression_id": rule_id,
+            "enable": False,
+        },
+    )
+    diff_text = extract_tool_text(update_res)
+    assert "⚠️ ACTION PENDING CONFIRMATION" in diff_text
+    token = _extract_token_from_diff(diff_text)
+
+    # Confirm and execute
+    await server.call_tool("execute_confirmed_action", {"confirmation_token": token})
+    assert update_route.call_count == 1
+
+    req_body = json.loads(update_route.calls[0].request.content)
+    # Changed field
+    assert req_body["enable"] is False
+    # Preserved required fields
+    assert req_body["name"] == "Production CVE Suppression"
+    assert req_body["description"] == "Risk accepted by secops team"
+    assert req_body["controls"] == existing_rule["controls"]
+    assert req_body["scope"] == existing_rule["scope"]
+    # Excluded server-generated fields
+    assert "created" not in req_body
+    assert "updated" not in req_body
+    assert "created_by" not in req_body
+    assert "updated_by" not in req_body
+    assert "policy_type" not in req_body
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_update_suppression_data_wrapper_format(
+    base_config: AquaConfig, mock_auth: respx.Route
+) -> None:
+    rule_id = "wrapped-data-rule-222"
+    existing_rule_data = {
+        "policy_id": rule_id,
+        "name": "Old Rule Name",
+        "description": "Original Desc",
+        "enable": False,
+        "controls": [],
+        "scope": {"expression": "v1", "variables": [{"attribute": "repository.name", "value": "*"}]},
+    }
+
+    # API returns {"data": {...}} wrapper
+    respx.get(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
+        status_code=200,
+        json={"data": existing_rule_data},
+    )
+
+    update_route = respx.put(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
+        status_code=200,
+        json={"policy_id": rule_id},
+    )
+
+    client = AquaClient(config=base_config)
+    engine = GuardrailEngine(config=base_config, client=client)
+    server = create_mcp_server(config=base_config, client=client, guardrail_engine=engine)
+
+    update_res = await server.call_tool(
+        "update_suppression",
+        {
+            "suppression_id": rule_id,
+            "name": "New Rule Name",
+        },
+    )
+    token = _extract_token_from_diff(extract_tool_text(update_res))
+    await server.call_tool("execute_confirmed_action", {"confirmation_token": token})
+
+    req_body = json.loads(update_route.calls[0].request.content)
+    assert req_body["name"] == "New Rule Name"
+    assert req_body["description"] == "Original Desc"
+    assert req_body["enable"] is False
+    assert req_body["controls"] == []
+    assert req_body["scope"] == existing_rule_data["scope"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_update_suppression_not_found(
+    base_config: AquaConfig, mock_auth: respx.Route
+) -> None:
+    rule_id = "non-existent-rule-id"
+    respx.get(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").respond(
+        status_code=404,
+        json={"message": "Suppression rule not found"},
+    )
+
+    client = AquaClient(config=base_config)
+    engine = GuardrailEngine(config=base_config, client=client)
+    server = create_mcp_server(config=base_config, client=client, guardrail_engine=engine)
+
+    update_res = await server.call_tool(
+        "update_suppression",
+        {
+            "suppression_id": rule_id,
+            "name": "Updated Name",
+        },
+    )
+    text = extract_tool_text(update_res)
+    assert "🔴 Suppression Rule Not Found or Error (HTTP 404)" in text
+    assert rule_id in text
+    # No action should be staged in the store
+    assert len(engine.store.list_active_actions()) == 0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_update_suppression_network_error(
+    base_config: AquaConfig, mock_auth: respx.Route
+) -> None:
+    rule_id = "network-fail-id"
+    respx.get(f"https://eu-central-1.edge.cloud.aquasec.com/supply_chain/v2/build/suppressions/{rule_id}").mock(
+        side_effect=httpx.ConnectError("Connection refused")
+    )
+
+    client = AquaClient(config=base_config)
+    engine = GuardrailEngine(config=base_config, client=client)
+    server = create_mcp_server(config=base_config, client=client, guardrail_engine=engine)
+
+    update_res = await server.call_tool(
+        "update_suppression",
+        {
+            "suppression_id": rule_id,
+            "name": "Updated Name",
+        },
+    )
+    text = extract_tool_text(update_res)
+    assert "🔴 Failed to Fetch Existing Suppression Rule (Client / Network Error)" in text
+    assert rule_id in text
+    assert len(engine.store.list_active_actions()) == 0
 
 
 # ---------------------------------------------------------------------------
