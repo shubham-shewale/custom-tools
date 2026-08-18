@@ -28,6 +28,7 @@ Model Context Protocol (MCP) server for Aqua Security European Cloud (`eu-centra
 - `mcp>=1.0.0` - Official Model Context Protocol Python SDK
 - `httpx>=0.27.0` - Async HTTP client for Aqua API communication
 - `pydantic>=2.0.0` - Data validation and configuration management
+- `python-dotenv>=1.0.0` - Automatic `.env` file loading
 
 ### Dev & Testing Dependencies
 - `pytest>=8.0.0`, `pytest-asyncio>=0.23.0`
@@ -39,6 +40,10 @@ Model Context Protocol (MCP) server for Aqua Security European Cloud (`eu-centra
 
 ## ⚙️ Configuration & Environment Variables
 
+The server automatically loads environment variables from a `.env` file in the project directory or from system environment variables.
+
+### Environment Variables
+
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `AQUA_API_KEY` | **Yes** | — | Aqua Security API Key / User ID |
@@ -47,6 +52,23 @@ Model Context Protocol (MCP) server for Aqua Security European Cloud (`eu-centra
 | `AQUA_TOKEN_URL` | No | `https://eu-1.api.cloudsploit.com/v2/tokens` | Aqua CloudSploit Token endpoint for EU region |
 | `AQUA_READ_ONLY` | No | `false` | When set to `true` / `1`, blocks all write operations |
 | `AQUA_REQUEST_TIMEOUT` | No | `30.0` | HTTP request timeout in seconds |
+
+### Setting up `.env` File (Recommended)
+
+Copy the `.env.example` template to `.env` and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+```dotenv
+AQUA_API_KEY="your-api-key"
+AQUA_API_SECRET="your-api-secret"
+AQUA_READ_ONLY="false"
+```
+
+*(You can also export them in your terminal session if preferred: `export AQUA_API_KEY="your-api-key"`)*
 
 ---
 
@@ -65,10 +87,10 @@ Model Context Protocol (MCP) server for Aqua Security European Cloud (`eu-centra
    uv sync
    ```
 
-3. **Set environment variables**:
+3. **Configure credentials**:
    ```bash
-   export AQUA_API_KEY="your-api-key"
-   export AQUA_API_SECRET="your-api-secret"
+   cp .env.example .env
+   # Edit .env and enter your AQUA_API_KEY and AQUA_API_SECRET
    ```
 
 4. **Run the MCP server**:
@@ -97,10 +119,14 @@ Model Context Protocol (MCP) server for Aqua Security European Cloud (`eu-centra
    pip install -e .
    ```
 
-4. **Run the server**:
+4. **Configure credentials**:
    ```bash
-   export AQUA_API_KEY="your-api-key"
-   export AQUA_API_SECRET="your-api-secret"
+   cp .env.example .env
+   # Edit .env and enter your AQUA_API_KEY and AQUA_API_SECRET
+   ```
+
+5. **Run the server**:
+   ```bash
    aquasec-mcp
    ```
 
@@ -186,7 +212,7 @@ Add the following to your `claude_desktop_config.json`:
 
 ## 🧪 Running Tests & Quality Checks
 
-Run the full test suite (78 tests):
+Run the full test suite (79 tests):
 ```bash
 uv run pytest
 # or with active venv:

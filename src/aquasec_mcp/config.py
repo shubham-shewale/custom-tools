@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 
+from dotenv import find_dotenv, load_dotenv
 from pydantic import BaseModel, Field
 
 
@@ -30,8 +31,16 @@ class AquaConfig(BaseModel):
     )
 
     @classmethod
-    def from_env(cls) -> AquaConfig:
-        """Instantiate configuration from environment variables."""
+    def from_env(cls, env_file: str | None = None) -> AquaConfig:
+        """Instantiate configuration from environment variables and .env file."""
+        if env_file:
+            load_dotenv(dotenv_path=env_file, override=True)
+        else:
+            dotenv_path = find_dotenv(usecwd=True)
+            if dotenv_path:
+                load_dotenv(dotenv_path=dotenv_path)
+            else:
+                load_dotenv()
         read_only_raw = os.getenv("AQUA_READ_ONLY", "false").strip().lower()
         read_only = read_only_raw in ("true", "1", "yes", "on")
 

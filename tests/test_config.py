@@ -37,3 +37,21 @@ def test_config_validate_credentials() -> None:
 
     valid_config = AquaConfig(api_key="key", api_secret="secret")
     valid_config.validate_credentials()  # should not raise
+
+
+def test_config_from_dotenv(tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "AQUA_API_KEY=dotenv-key\n"
+        "AQUA_API_SECRET=dotenv-secret\n"
+        "AQUA_READ_ONLY=1\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("AQUA_API_KEY", raising=False)
+    monkeypatch.delenv("AQUA_API_SECRET", raising=False)
+    monkeypatch.delenv("AQUA_READ_ONLY", raising=False)
+
+    config = AquaConfig.from_env()
+    assert config.api_key == "dotenv-key"
+    assert config.api_secret == "dotenv-secret"
+    assert config.read_only is True
